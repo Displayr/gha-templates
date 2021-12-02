@@ -1,0 +1,216 @@
+name: Reusable Workflow to Run Chrome Test Batches
+on:
+  workflow_call:
+    inputs:
+      matrixInput:
+        description: matrix array
+        required: true
+        type: string
+      branch:
+        description: The name of the git branch the build number is associate to.
+        required: true
+        type: string
+      buildNumber:
+        description: Appveyor build number
+        required: true
+        type: string
+      commitSha:
+        description: The commit sha use for the build number
+        required: true
+        type: string
+      endpointChromeTests:
+        description: The endpoint which the chrometests are stored
+        required: true
+        type: string
+      endpointOutputScreenshots:
+        description: The name of the endpoint to store output screenshots
+        required: true
+        type: string
+    secrets:
+      CONNECTION_STRING_AUTOTEST_DB:
+        required: true
+      ACCESS_TOKEN_CONTAINER_BUILDS:
+        required: true
+      ACCESS_TOKEN_CONTAINER_SCREENSHOTS:
+        required: true
+
+jobs:
+  install_dependencies_to_cache:
+    name: Install Dependencies to Caches
+    runs-on: windows-2019
+    env:
+      FONT_AWESOME_VERSION: "4.7.0"
+      OPENSANS_VERSION: "2.010"
+      SIMPLY_SQL_VERSION: "1.8.0"
+    steps:
+    - uses: actions/cache@v2
+      name: Check Opensans Cache
+      id: cache-opensans
+      with:
+        path: C:/ProgramData/chocolatey/lib/OpenSans/tools
+        key: ${{ runner.os }}-opensans-${{ env.OPENSANS_VERSION }}
+    - name: Install Opensans
+      if: steps.cache-opensans.outputs.cache-hit != 'true'
+      run: choco install -y opensans --version ${{ env.OPENSANS_VERSION }}
+    - uses: actions/cache@v2
+      name: Check Fontawesome Cache
+      id: cache-fontawesome
+      with:
+        path: ./font-awesome-${{ env.FONT_AWESOME_VERSION }}/fonts/fontawesome-webfont.ttf
+        key: ${{ runner.os }}-font-awesome-${{ env.FONT_AWESOME_VERSION }}
+    - name: Install Fontawesome
+      if: steps.cache-fontawesome.outputs.cache-hit != 'true'
+      run: |
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        $FontAwesomeUri = "https://github.com/FortAwesome/Font-Awesome/archive/v${{ env.FONT_AWESOME_VERSION }}.zip"
+        $FontAwesome = "font-awesome-${{ env.FONT_AWESOME_VERSION }}.zip"
+        Invoke-WebRequest $FontAwesomeUri -OutFile $FontAwesome 
+        [System.IO.Compression.ZipFile]::ExtractToDirectory($FontAwesome, "./")
+    - uses: actions/cache@v2
+      name: Check Simplysql Cache
+      id: cache-simplysql
+      with:
+        path: C:\Users\runneradmin\Documents\PowerShell\Modules\SimplySql\${{ env.SIMPLY_SQL_VERSION }}
+        key: ${{ runner.os }}-simplysql-${{ env.SIMPLY_SQL_VERSION }}
+    - name: Install SimplySql
+      if: steps.cache-simplysql.outputs.cache-hit != 'true'
+      run: |
+        Install-Module -Name SimplySql -RequiredVersion ${{ env.SIMPLY_SQL_VERSION }} -Confirm:$False -Force
+
+  run_batch:
+    name: Run Chrome Test Batches
+    runs-on: windows-2019
+    needs: [install-dependencies-to-cache]
+    env:
+      BRANCH: ${{ inputs.branch }}
+      BUILD_NUMBER: ${{ inputs.buildNumber }}
+      COMMIT_SHA: ${{ inputs.commitSha }}
+      CONNECTION_STRING_AUTOTEST_DB: ${{ secrets.CONNECTION_STRING_AUTOTEST_DB }}
+      ENDPOINT_CHROMETEST: ${{ inputs.endpointChromeTests }}
+      ENDPOINT_OUTPUT_SCREENSHOTS: ${{ inputs.endpointOutputScreenshots }}
+      FONT_AWESOME_VERSION: "4.7.0"
+      OPENSANS_VERSION: "2.010"
+      SIMPLY_SQL_VERSION: "1.8.0"
+      ORIGINAL_RESULT_FILE: OriginalTestResult.xml
+      RERUN_RESULT_FILE: RerunTestResult.xml
+      TOKEN_CONTAINER_BUILD: ${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}
+      TOKEN_CONTAINER_SCREENSHOTS: ${{ secrets.ACCESS_TOKEN_CONTAINER_SCREENSHOTS }}
+      TEST_LOCATION: ChromeTests\bin\Release
+    strategy:
+      fail-fast: false
+      matrix: 
+        batch: ${{ inputs.matrixInput }}
+    steps:
+      - uses: actions/cache@v2
+        name: Get Opensans from cache
+        id: cache-opensans
+        with:
+          path: C:/ProgramData/chocolatey/lib/OpenSans
+          key: ${{ runner.os }}-opensans-${{ env.OPENSANS_VERSION }}
+      - uses: actions/cache@v2
+        name: Get Fontawesome from cache
+        id: cache-fontawesome
+        with:
+          path: ./font-awesome-${{ env.FONT_AWESOME_VERSION }}
+          key: ${{ runner.os }}-font-awesome-${{ env.FONT_AWESOME_VERSION }}
+      - uses: actions/cache@v2
+        name: Get SimplySql from cache
+        id: cache-simplysql
+        with:
+          path: C:\Users\runneradmin\Documents\PowerShell\Modules\SimplySql
+          key: ${{ runner.os }}-simplysql-${{ env.SIMPLY_SQL_VERSION }}
+      - name: Fontawesome set HKCU
+        run: |
+          $FontPath = Join-Path $pwd font-awesome-${{ env.FONT_AWESOME_VERSION }}\fonts\fontawesome-webfont.ttf
+          Set-ItemProperty -path "HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" -name "FontAwesome" -value "$FontPath"
+      - name: Download and Extract Release
+        run: |
+          $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.7z?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
+          Invoke-WebRequest -Uri $uri -OutFile ChromeTests.7z
+          7z x -y .\ChromeTests.7z
+      - name: Run Tests
+        id: runTests
+        timeout-minutes: 30
+        continue-on-error: true
+        run: |
+          cd ${{ env.TEST_LOCATION }}
+          .\nunit3-console.exe ChromeTests.dll --encoding=utf-8 --domain=None --inprocess --labels=All --testparam non-interactive=true `
+            --result=${{ env.ORIGINAL_RESULT_FILE }} `
+            --where "cat != DontRunForReleaseBuild and cat == Batch${{ matrix.batch }}"
+      - name: Rerun Failed Test
+        if: steps.runTests.outcome == 'failure'
+        id: rerunTests
+        timeout-minutes: 30
+        run: |
+          cd ${{ env.TEST_LOCATION }}
+          $OriginalFailTestResult = "OriginalFailTestResult.txt"
+          Select-Xml -XPath '//test-case' `
+            -Path '${{ env.ORIGINAL_RESULT_FILE }}' `
+            | Select-Object -Expand Node `
+            | where {$_.result -eq "Failed"} `
+            | Select-Object -Expand 'fullname' `
+            | Out-File -FilePath $OriginalFailTestResult
+          .\nunit3-console.exe ChromeTests.dll --encoding=utf-8 --domain=None --inprocess --labels=All --testparam non-interactive=true `
+            --result=${{ env.RERUN_RESULT_FILE }} `
+            --testlist $OriginalFailTestResult
+      - name: Upload Artifacts
+        if: always() && steps.rerunTests.outcome == 'failure'
+        run: |
+          azcopy cp "${{ env.TEST_LOCATION }}/Artifacts/*" "${{ env.ENDPOINT_OUTPUT_SCREENSHOTS }}/${{ env.COMMIT_SHA }}?${{ env.TOKEN_CONTAINER_SCREENSHOTS }}" --recursive --put-md5
+      - name: Report Testruns to Database
+        if: always()
+        run: |
+          Import-Module -Name SimplySql
+          cd ${{ env.TEST_LOCATION }}
+          Open-MySqlConnection -ConnectionString "${{ env.CONNECTION_STRING_AUTOTEST_DB }}"
+          if ( Test-Path ${{ env.ORIGINAL_RESULT_FILE }} -PathType leaf )
+          {
+            Write-Host "Updating Test database for Tests"
+            Write-Host "================================"
+            $TestResults = Select-Xml -XPath '//test-case' `
+              -Path '${{ env.ORIGINAL_RESULT_FILE }}' `
+              | Select-Object -Expand Node
+            foreach ($Test in $TestResults) {
+              try {
+                $TestName = echo $Test | Select-Object -Expand 'fullname'
+                $TestDuration = echo $Test | Select-Object -Expand 'duration'
+                $TestStartTime = echo $Test | Select-Object -Expand 'start-time'
+                $TestResult = echo $Test | Select-Object -Expand 'result'
+                $TestLogDir = 'Github Action'
+                $Revision = '${{ env.COMMIT_SHA }}'
+                $Branch = '${{ env.BRANCH }}'
+                $TestId = $(Invoke-SqlQuery -query "select TestID from Test where TestType = 'ChromeTest' and TestName = @TestName" -Parameters @{TestName = $TestName}).TestID | Select-Object -first 1
+                if ( $TestId -eq $null) {
+                  Invoke-SqlUpdate -query "insert into Test(TestType, TestName) values('ChromeTest', @TestName)" -Parameters @{TestName = $TestName}
+                  $TestId = $(Invoke-SqlQuery -query "select TestID from Test where TestType = 'ChromeTest' and TestName = @TestName" -Parameters @{TestName = $TestName}).TestID | Select-Object -first 1
+                }
+                Write-Host $TestId $TestName $TestResult
+                Invoke-SqlUpdate -query `
+                  "insert into TestRun(TestID, Revision, WhenRun, Branch, Duration, Result, LogPath) values(@TestId ,@Revision , @TestStartTime, @Branch, @TestDuration, @Result, @LogPath)" `
+                  -Parameters @{TestId=$TestId; StartTime=$TestStartTime; Revision=$Revision; TestStartTime=$TestStartTime; Branch=$Branch; TestDuration=$TestDuration; Result=$Result; LogPath=$TestLogDir}
+              } catch {
+                Write-Warning "Error recording result of following test:  $($TestName)"
+              }
+            }
+
+          }
+          if ( Test-Path ${{ env.RERUN_RESULT_FILE }} -PathType leaf )
+          {
+            Write-Host ""
+            Write-Host "Updating Test database for Unreliable Tests"
+            Write-Host "================================"
+            $TestResults = Select-Xml -XPath '//test-case' `
+              -Path '${{ env.RERUN_RESULT_FILE }}' `
+              | Select-Object -Expand Node `
+              | where {$_.result -eq "Passed"}
+              | Select-Object -Expand 'fullname'
+            foreach ($Test in $TestResults) {
+              try {
+                Write-Host $Test
+                $TestId = $(Invoke-SqlQuery -query "select TestID from Test where TestType = 'ChromeTest' and TestName = @TestName" -Parameters @{TestName = $Test}).TestID | Select-Object -first 1
+                Invoke-SqlUpdate -query "INSERT INTO UnreliableTest(TestID) VALUES (@TestId)"  -Parameters @{TestId=$TestId}
+              } catch {
+                Write-Warning "Error recording result of following test:  $($Test)"
+              }
+            }
+          }

@@ -1,0 +1,37 @@
+name: Notify Displayr Good Build
+on:
+  workflow_call:
+    inputs:
+      branch:
+        description: The name of the git branch the build number is associated to.
+        required: true
+        type: string
+      buildNumber:
+        description: Appveyor build number
+        required: true
+        type: string
+      displayrEndpoint:
+        description: Endpoint to notify Displayr of successful builds
+        required: true
+        type: string
+
+jobs:
+  notify:
+    name: Notify Displayr
+    runs-on: ubuntu-latest
+    env:
+      BRANCH: ${{ inputs.branch }}
+      BUILD_NUMBER: ${{ inputs.buildNumber }}
+      ENDPOINT_DISPLAYR: ${{ inputs.displayrEndpoint }}
+    steps:
+    - name: Good Build
+      run: |
+        status_code=$(curl -o /dev/null --head -w "%{http_code}" -X GET "${{ env.ENDPOINT_DISPLAYR }}?branch=${{ env.BRANCH }}&build=${{ env.BUILD_NUMBER }}")
+        if [[ "$status_code" -eq 418 ]] ; then
+          echo "There is a newer build from Displayr"
+        elif [[ "$status_code" -lt 200 || "$status_code" -gt 299 ]] ; then
+          echo "There was a problem notifying Displayr of the build"
+          exit 1
+        else
+          echo "Build has been marked"
+        fi

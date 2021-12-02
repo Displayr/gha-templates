@@ -1,0 +1,49 @@
+name: Update Github Commit Status
+on:
+  workflow_call:
+    inputs:
+      commitSha:
+        description: The commit sha used for this build
+        required: true
+        type: string
+      githubToken: 
+        description: Github PAT
+        required: true
+        type: string
+      runId:
+        description: Github run id
+        required: true
+        type: string
+      status:
+        description: result of test being run
+        required: true
+        type: string
+      description:
+        description: description of commit status
+        required: true
+        type: string
+      context:
+        description: Description of the check that is being run
+        required: true
+        type: string
+
+jobs:
+  update:
+    name: update github commit status
+    runs-on: ubuntu-latest
+    env:
+      BRANCH: ${{ inputs.branch }}
+      BUILD_NUMBER: ${{ inputs.buildNumber }}
+      COMMIT_SHA: ${{ inputs.commitSha }}
+      CONTEXT: ${{ inputs.context }}
+      DESCRIPTION: ${{ inputs.description }}
+      GITHUB_TOKEN: ${{ inputs.token }}
+      REPO_NAME: ${{ github.repository }}
+      RUN_ID: ${{ inputs.runId }}
+      STATUS: ${{ inputs.status }}
+    steps:
+      - name: update
+        run: |
+          curl -X POST -H "Authorization: Bearer ${{ env.GITHUB_TOKEN }}"  \
+            -d '{"state": ${{ env.STATUS }}, "description": ${{ env.DESCRIPTION }}, "context": ${{ env.CONTEXT }}, "target_url": "https://github.com/${{ env.REPO_NAME }}/actions/runs/${{ env.RUN_ID }}"}' \
+            https://api.github.com/repos/${{ env.REPO_NAME }}statuses/${{ env.COMMIT_SHA }}

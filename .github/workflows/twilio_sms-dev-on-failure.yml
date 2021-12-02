@@ -1,0 +1,38 @@
+name: SMS dev on commit failure
+on:
+  workflow_call:
+    inputs:
+      devMobileNumber:
+        description: The phone number of the developer that is responsible for the commit
+        required: true
+        type: string
+      smsBody:
+        description: The body of text in SMS to send to dev
+        required: true
+        type: string
+
+    secrets:
+      TWILIO_ACCOUNT_SID:
+        required: true
+      TWILIO_API_KEY:
+        required: true
+      TWILIO_API_SECRET:
+        required: true
+      TWILIO_SOURCE_NUMBER:
+        required: true
+
+jobs:
+  sms-dev-on-failure:
+    name: SMS dev on failure
+    runs-on: ubuntu-latest
+    env:
+      MOBILE_NUMBER: ${{ inputs.devMobileNumber }}
+      SMS_BODY: ${{ inputs.smsBody }}
+    steps:
+      - name: SMS Dev - Failure
+        run: |
+          curl -XPOST https://api.twilio.com/2010-04-01/Accounts/${{ secrets.TWILIO_ACCOUNT_SID }}/Messages.json \
+            --data-urlencode 'To=${{ env.MOBILE_NUMBER }}' \
+            --data-urlencode 'From=${{ secrets.TWILIO_SOURCE_NUMBER }}' \
+            --data-urlencode $'Body=${{ env.SMS_BODY }}' \
+            -u '${{ secrets.TWILIO_API_KEY }}:${{ secrets.TWILIO_API_SECRET }}'
