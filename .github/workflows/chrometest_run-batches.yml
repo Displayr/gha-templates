@@ -54,7 +54,6 @@ jobs:
             else ary+="$i]" 
             fi
           done
-          echo $ary
           echo "::set-output name=arr::$ary"
 
   install_dependencies_to_cache:
@@ -134,6 +133,7 @@ jobs:
         run: | 
           ls C:/ProgramData/chocolatey/lib/OpenSans/tools
           ls C:/ProgramData/chocolatey/lib/OpenSans
+          echo ${{ matrix.batch }}
       # - uses: actions/cache@v2
       #   name: Get Fontawesome From Cache
       #   id: cache-fontawesome
