@@ -44,17 +44,7 @@ jobs:
       ARRAY_SIZE: ${{ inputs.batchNumber }}
     steps:
       - id: matrixArray
-        run: |
-          end=$[ ${{ env.ARRAY_SIZE }} - 1 ]
-          ary="["
-          for ((i=0; i<=$end; i++))
-          do 
-            if [ $i -ne $end ]
-              then ary+="$i, "
-            else ary+="$i]" 
-            fi
-          done
-          echo "::set-output name=arr::$ary"
+        run: echo "::set-output name=arr::[$(seq -s ", " 0 $[ ${{ env.ARRAY_SIZE }} - 1 ])]"
 
   install_dependencies_to_cache:
     name: Install Dependencies to Caches
@@ -64,6 +54,8 @@ jobs:
       OPENSANS_VERSION: "2.010"
       SIMPLY_SQL_VERSION: "1.8.0"
     steps:
+    - name: check fonts before cache
+      run: Get-ChildItem -Path C:/Windows/Fonts
     - uses: actions/cache@v2
       name: Check Opensans Cache
       id: cache-opensans
@@ -97,6 +89,8 @@ jobs:
       if: steps.cache-simplysql.outputs.cache-hit != 'true'
       run: |
         Install-Module -Name SimplySql -RequiredVersion ${{ env.SIMPLY_SQL_VERSION }} -Confirm:$False -Force
+    - name: check fonts after cache
+      run: Get-ChildItem -Path C:/Windows/Fonts
 
   run_batch:
     name: Run Chrome Test Batches
