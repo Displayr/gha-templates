@@ -43,7 +43,7 @@ jobs:
     env: 
       ARRAY_SIZE: ${{ inputs.batchNumber }}
     steps:
-      - id: matrixAraray
+      - id: matrixArray
         run: |
           end=$[ ${{ env.ARRAY_SIZE }} - 1 ]
           ary="["
