@@ -91,7 +91,7 @@ jobs:
   run_batch:
     name: Run Chrome Test Batches
     runs-on: windows-2019
-    needs: [install-dependencies-to-cache, generate_batch_matrix]
+    needs: [install_dependencies_to_cache, generate_batch_matrix]
     env:
       BRANCH: ${{ inputs.branch }}
       BUILD_NUMBER: ${{ inputs.buildNumber }}
