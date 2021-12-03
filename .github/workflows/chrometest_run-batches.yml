@@ -45,7 +45,7 @@ jobs:
     steps:
       - id: matrixAraray
         run: |
-          end=$[ ${{ env.MATRIX_SIZE }} - 1 ]
+          end=$[ ${{ env.ARRAY_SIZE }} - 1 ]
           ary="["
           for ((i=0; i<=$end; i++))
           do 
