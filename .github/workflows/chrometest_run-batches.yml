@@ -63,7 +63,7 @@ jobs:
         path: | 
           C:/ProgramData/chocolatey/lib/OpenSans/tools
           C:/ProgramData/chocolatey/lib/chocolatey-font-helpers.extension/extensions/Install-ChocolateyFont.ps1
-        key: opensans-${{ env.OPENSANS_VERSION }}
+        key: -opensans-${{ env.OPENSANS_VERSION }}
     - name: Install Opensans
       if: steps.cache-opensans.outputs.cache-hit != 'true'
       run: choco install -y opensans --version ${{ env.OPENSANS_VERSION }}
@@ -125,7 +125,7 @@ jobs:
           path: | 
             C:/ProgramData/chocolatey/lib/OpenSans/tools
             C:/ProgramData/chocolatey/lib/chocolatey-font-helpers.extension/extensions/Install-ChocolateyFont.ps1
-          key: opensans-${{ env.OPENSANS_VERSION }}
+          key: -opensans-${{ env.OPENSANS_VERSION }}
       - name: install open sans
         run: |
           Import-Module -Name chcolatey-font-helpers
