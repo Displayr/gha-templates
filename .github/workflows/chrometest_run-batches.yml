@@ -68,8 +68,8 @@ jobs:
       name: Check Opensans Cache
       id: cache-opensans
       with:
-        path: C:/ProgramData/chocolatey/lib/OpenSans/tools
-        key: ${{ runner.os }}-opensans-${{ env.OPENSANS_VERSION }}
+        path: C:/ProgramData/chocolatey/lib/OpenSans
+        key: opensans-${{ env.OPENSANS_VERSION }}
     - name: Install Opensans
       if: steps.cache-opensans.outputs.cache-hit != 'true'
       run: choco install -y opensans --version ${{ env.OPENSANS_VERSION }}
@@ -78,7 +78,7 @@ jobs:
       id: cache-fontawesome
       with:
         path: ./font-awesome-${{ env.FONT_AWESOME_VERSION }}/fonts/fontawesome-webfont.ttf
-        key: ${{ runner.os }}-font-awesome-${{ env.FONT_AWESOME_VERSION }}
+        key: font-awesome-${{ env.FONT_AWESOME_VERSION }}
     - name: Install Fontawesome
       if: steps.cache-fontawesome.outputs.cache-hit != 'true'
       run: |
@@ -92,7 +92,7 @@ jobs:
       id: cache-simplysql
       with:
         path: C:\Users\runneradmin\Documents\PowerShell\Modules\SimplySql\${{ env.SIMPLY_SQL_VERSION }}
-        key: ${{ runner.os }}-simplysql-${{ env.SIMPLY_SQL_VERSION }}
+        key: simplysql-${{ env.SIMPLY_SQL_VERSION }}
     - name: Install SimplySql
       if: steps.cache-simplysql.outputs.cache-hit != 'true'
       run: |
@@ -128,7 +128,7 @@ jobs:
         id: cache-opensans
         with:
           path: C:/ProgramData/chocolatey/lib/OpenSans
-          key: ${{ runner.os }}-opensans-${{ env.OPENSANS_VERSION }}
+          key: opensans-${{ env.OPENSANS_VERSION }}
       - name: Debug Opensans
         run: | 
           ls C:/ProgramData/chocolatey/lib/OpenSans/tools
@@ -139,13 +139,13 @@ jobs:
       #   id: cache-fontawesome
       #   with:
       #     path: ./font-awesome-${{ env.FONT_AWESOME_VERSION }}
-      #     key: ${{ runner.os }}-font-awesome-${{ env.FONT_AWESOME_VERSION }}
+      #     key: font-awesome-${{ env.FONT_AWESOME_VERSION }}
       # - uses: actions/cache@v2
       #   name: Get SimplySql From Cache
       #   id: cache-simplysql
       #   with:
       #     path: C:\Users\runneradmin\Documents\PowerShell\Modules\SimplySql
-      #     key: ${{ runner.os }}-simplysql-${{ env.SIMPLY_SQL_VERSION }}
+      #     key: simplysql-${{ env.SIMPLY_SQL_VERSION }}
       # - name: Fontawesome set HKCU
       #   run: |
       #     $FontPath = Join-Path $pwd font-awesome-${{ env.FONT_AWESOME_VERSION }}\fonts\fontawesome-webfont.ttf
