@@ -54,6 +54,7 @@ jobs:
             else ary+="$i]" 
             fi
           done
+          echo $ary
           echo "::set-output name=arr::$ary"
 
   install_dependencies_to_cache:
