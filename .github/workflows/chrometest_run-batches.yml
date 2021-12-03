@@ -44,7 +44,17 @@ jobs:
       ARRAY_SIZE: ${{ inputs.batchNumber }}
     steps:
       - id: matrixAraray
-        run: echo "::set-output name=arr::[$(seq -s ", " 0 $[ ${{ env.ARRAY_SIZE }} - 1 ])]"
+        run: |
+          end=$[ ${{ env.MATRIX_SIZE }} - 1 ]
+          ary="["
+          for ((i=0; i<=$end; i++))
+          do 
+            if [ $i -ne $end ]
+              then ary+="$i, "
+            else ary+="$i]" 
+            fi
+          done
+          echo "::set-output name=arr::$ary"
 
   install_dependencies_to_cache:
     name: Install Dependencies to Caches
