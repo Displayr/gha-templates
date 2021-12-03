@@ -128,7 +128,7 @@ jobs:
           key: -opensans-${{ env.OPENSANS_VERSION }}
       - name: install open sans
         run: |
-          Import-Module -Name chcolatey-font-helpers
+          Import-Module -Name chocolatey-font-helpers
           Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-Bold.ttf"
           Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-BoldItalic.ttf"
           Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-CondBold.ttf"
