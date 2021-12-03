@@ -60,7 +60,9 @@ jobs:
       name: Check Opensans Cache
       id: cache-opensans
       with:
-        path: C:/ProgramData/chocolatey/lib/OpenSans
+        path: | 
+          C:/ProgramData/chocolatey/lib/OpenSans/tools
+          C:/ProgramData/chocolatey/lib/chocolatey-font-helpers.extension/extensions/Install-ChocolateyFont.ps1
         key: opensans-${{ env.OPENSANS_VERSION }}
     - name: Install Opensans
       if: steps.cache-opensans.outputs.cache-hit != 'true'
@@ -116,18 +118,30 @@ jobs:
       matrix: 
         batch: ${{ fromJSON(needs.generate_batch_matrix.outputs.MATRIX_ARRAY) }}
     steps:
-    
       - uses: actions/cache@v2
         name: Get Opensans from cache
         id: cache-opensans
         with:
-          path: C:/ProgramData/chocolatey/lib/OpenSans
+          path: | 
+            C:/ProgramData/chocolatey/lib/OpenSans/tools
+            C:/ProgramData/chocolatey/lib/chocolatey-font-helpers.extension/extensions/Install-ChocolateyFont.ps1
           key: opensans-${{ env.OPENSANS_VERSION }}
-      - name: Debug Opensans
-        run: | 
-          ls C:/ProgramData/chocolatey/lib/OpenSans/tools
-          ls C:/ProgramData/chocolatey/lib/OpenSans
-          echo ${{ matrix.batch }}
+      - name: install open sans
+        run: |
+          Import-Module -Name chcolatey-font-helpers
+          Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-Bold.ttf"
+          Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-BoldItalic.ttf"
+          Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-CondBold.ttf"
+          Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-CondLight.ttf"
+          Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-CondLightItalic.ttf"
+          Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-ExtraBold.ttf"
+          Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-ExtraBoldItalic.ttf"
+          Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-Italic.ttf"
+          Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-Light.ttf"
+          Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-LightItalic.ttf"
+          Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-Regular.ttf"
+          Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-SemiBold.ttf"
+          Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-SemiBoldItalic.ttf"
       - uses: actions/cache@v2
         name: Get Fontawesome From Cache
         id: cache-fontawesome
@@ -138,7 +152,7 @@ jobs:
         name: Get SimplySql From Cache
         id: cache-simplysql
         with:
-          path: C:\Users\runneradmin\Documents\PowerShell\Modules\SimplySql
+          path: C:\Users\runneradmin\Documents\PowerShell\Modules\SimplySql\${{ env.SIMPLY_SQL_VERSION }}
           key: simplysql-${{ env.SIMPLY_SQL_VERSION }}
       - name: Fontawesome set HKCU
         run: |
