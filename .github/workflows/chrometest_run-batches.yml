@@ -120,7 +120,7 @@ jobs:
           path: C:\ProgramData\chocolatey\lib\OpenSans\tools
           key: -opensans-${{ env.OPENSANS_VERSION }}
       - name: Set OpenSans HKCU
-        run: Get-ChildItem -Path ${{ env.OPENSANS_PATH }}\*.ttf | %{ Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" -Name "$($_.Basename) (TrueType)" -Type STRING -Value $_.fullname }
+        run: Get-ChildItem -Path C:\ProgramData\chocolatey\lib\OpenSans\tools\*.ttf | %{ Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" -Name "$($_.Basename) (TrueType)" -Type STRING -Value $_.fullname }
       - uses: actions/cache@v2
         name: Get Fontawesome From Cache
         id: cache-fontawesome
