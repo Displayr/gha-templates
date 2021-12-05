@@ -60,9 +60,7 @@ jobs:
       name: Check Opensans Cache
       id: cache-opensans
       with:
-        path: | 
-          C:/ProgramData/chocolatey/lib/OpenSans/tools
-          C:/ProgramData/chocolatey/lib/chocolatey-font-helpers.extension/extensions/Install-ChocolateyFont.ps1
+        path: C:\ProgramData\chocolatey\lib\OpenSans\tools
         key: -opensans-${{ env.OPENSANS_VERSION }}
     - name: Install Opensans
       if: steps.cache-opensans.outputs.cache-hit != 'true'
@@ -71,7 +69,7 @@ jobs:
       name: Check Fontawesome Cache
       id: cache-fontawesome
       with:
-        path: ./font-awesome-${{ env.FONT_AWESOME_VERSION }}/fonts/fontawesome-webfont.ttf
+        path: .\font-awesome-${{ env.FONT_AWESOME_VERSION }}\fonts\fontawesome-webfont.ttf
         key: font-awesome-${{ env.FONT_AWESOME_VERSION }}
     - name: Install Fontawesome
       if: steps.cache-fontawesome.outputs.cache-hit != 'true'
@@ -89,10 +87,7 @@ jobs:
         key: simplysql-${{ env.SIMPLY_SQL_VERSION }}
     - name: Install SimplySql
       if: steps.cache-simplysql.outputs.cache-hit != 'true'
-      run: |
-        Install-Module -Name SimplySql -RequiredVersion ${{ env.SIMPLY_SQL_VERSION }} -Confirm:$False -Force
-    - name: check fonts after cache
-      run: Get-ChildItem -Path C:/Windows/Fonts
+      run: Install-Module -Name SimplySql -RequiredVersion ${{ env.SIMPLY_SQL_VERSION }} -Confirm:$False -Force
 
   run_batch:
     name: Run Chrome Test Batches
@@ -122,31 +117,15 @@ jobs:
         name: Get Opensans from cache
         id: cache-opensans
         with:
-          path: | 
-            C:/ProgramData/chocolatey/lib/OpenSans/tools
-            C:/ProgramData/chocolatey/lib/chocolatey-font-helpers.extension/extensions/Install-ChocolateyFont.ps1
+          path: C:\ProgramData\chocolatey\lib\OpenSans\tools
           key: -opensans-${{ env.OPENSANS_VERSION }}
-      - name: install open sans
-        run: |
-          Import-Module -Name chocolatey-font-helpers
-          Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-Bold.ttf"
-          Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-BoldItalic.ttf"
-          Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-CondBold.ttf"
-          Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-CondLight.ttf"
-          Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-CondLightItalic.ttf"
-          Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-ExtraBold.ttf"
-          Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-ExtraBoldItalic.ttf"
-          Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-Italic.ttf"
-          Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-Light.ttf"
-          Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-LightItalic.ttf"
-          Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-Regular.ttf"
-          Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-SemiBold.ttf"
-          Install-ChocolateyFont "C:/ProgramData/chocolatey/lib/OpenSans/tools/OpenSans-SemiBoldItalic.ttf"
+      - name: Set OpenSans HKCU
+        run: Get-ChildItem -Path ${{ env.OPENSANS_PATH }}\*.ttf | %{ Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" -Name "$($_.Basename) (TrueType)" -Type STRING -Value $_.fullname }
       - uses: actions/cache@v2
         name: Get Fontawesome From Cache
         id: cache-fontawesome
         with:
-          path: ./font-awesome-${{ env.FONT_AWESOME_VERSION }}
+          path: .\font-awesome-${{ env.FONT_AWESOME_VERSION }}\fonts\fontawesome-webfont.ttf
           key: font-awesome-${{ env.FONT_AWESOME_VERSION }}
       - uses: actions/cache@v2
         name: Get SimplySql From Cache
@@ -154,10 +133,10 @@ jobs:
         with:
           path: C:\Users\runneradmin\Documents\PowerShell\Modules\SimplySql\${{ env.SIMPLY_SQL_VERSION }}
           key: simplysql-${{ env.SIMPLY_SQL_VERSION }}
-      - name: Fontawesome set HKCU
+      - name: Set Fontawesome HKCU
         run: |
           $FontPath = Join-Path $pwd font-awesome-${{ env.FONT_AWESOME_VERSION }}\fonts\fontawesome-webfont.ttf
-          Set-ItemProperty -path "HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" -name "FontAwesome" -value "$FontPath"
+          Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" -Name "FontAwesome" -Value "$FontPath"
       - name: Download and Extract Release
         run: |
           $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.7z?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
