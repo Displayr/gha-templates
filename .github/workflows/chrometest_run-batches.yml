@@ -140,7 +140,6 @@ jobs:
       - name: Report Testruns to Database
         if: always()
         run: |
-          ls C:\Users\runneradmin\Documents\PowerShell\Modules\
           Import-Module -Name SimplySql
           cd ${{ env.TEST_LOCATION }}
           Open-MySqlConnection -ConnectionString "${{ env.CONNECTION_STRING_AUTOTEST_DB }}"
