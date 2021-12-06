@@ -36,7 +36,7 @@ on:
 
 jobs:
   install_dependencies_to_cache:
-    name: Install Dependencies to Caches
+    name: Install Dependencies to Cache
     runs-on: windows-2019
     env:
       FONT_AWESOME_VERSION: "4.7.0"
@@ -64,7 +64,7 @@ jobs:
         Install-Module -Name SimplySql -RequiredVersion ${{ env.SIMPLY_SQL_VERSION }} -Confirm:$False -Force
 
   run_batch:
-    name: Run Chrome Test Batches
+    name: Run Batch
     runs-on: windows-2019
     needs: [install_dependencies_to_cache]
     env:

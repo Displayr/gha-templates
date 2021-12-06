@@ -29,7 +29,7 @@ on:
 
 jobs:
   update:
-    name: update github commit status
+    name: Update Commit Status
     runs-on: ubuntu-latest
     env:
       BRANCH: ${{ inputs.branch }}
