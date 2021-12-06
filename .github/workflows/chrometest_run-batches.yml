@@ -6,10 +6,6 @@ on:
         description: Array to use as batch matrix
         required: true
         type: string
-      batchNumber:
-        description: number of batches to run
-        required: true
-        type: string
       branch:
         description: The name of the git branch the build number is associate to.
         required: true
