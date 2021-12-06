@@ -48,7 +48,7 @@ jobs:
       id: cache-dependencies
       with:
         path: |
-          C:\ProgramData\chocolatey\lib\OpenSans\tools\*.ttf
+          C:\ProgramData\chocolatey\lib\OpenSans\tools
           .\font-awesome-${{ env.FONT_AWESOME_VERSION }}\fonts\fontawesome-webfont.ttf
           C:\Users\runneradmin\Documents\PowerShell\Modules\SimplySql\${{ env.SIMPLY_SQL_VERSION }}
         key: opensans-${{ env.OPENSANS_VERSION }}-fontawesome-${{ env.FONT_AWESOME_VERSION }}-simplysql-${{ env.SIMPLY_SQL_VERSION }}
@@ -93,10 +93,10 @@ jobs:
         id: cache
         with:
           path: |
-            C:\ProgramData\chocolatey\lib\OpenSans\tools\*.ttf
+            C:\ProgramData\chocolatey\lib\OpenSans\tools
             .\font-awesome-${{ env.FONT_AWESOME_VERSION }}\fonts\fontawesome-webfont.ttf
             C:\Users\runneradmin\Documents\PowerShell\Modules\SimplySql\${{ env.SIMPLY_SQL_VERSION }}
-          key: opensans-${{ env.OPENSANS_VERSION }}-fontawesome-${{ env.FONT_AWESOME_VERSION }}-simplysql-${{ env.SIMPLY_SQL_VERSION }}}
+          key: opensans-${{ env.OPENSANS_VERSION }}-fontawesome-${{ env.FONT_AWESOME_VERSION }}-simplysql-${{ env.SIMPLY_SQL_VERSION }}
       - name: Set OpenSans and Fontawesome HKCU
         run: |
           Get-ChildItem -Path C:\ProgramData\chocolatey\lib\OpenSans\tools\*.ttf | %{ Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" -Name "$($_.Basename) (TrueType)" -Type STRING -Value $_.fullname }
@@ -139,6 +139,7 @@ jobs:
       - name: Report Testruns to Database
         if: always()
         run: |
+          ls C:\Users\runneradmin\Documents\PowerShell\Modules\
           Import-Module -Name SimplySql
           cd ${{ env.TEST_LOCATION }}
           Open-MySqlConnection -ConnectionString "${{ env.CONNECTION_STRING_AUTOTEST_DB }}"
