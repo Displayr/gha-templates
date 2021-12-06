@@ -89,8 +89,8 @@ jobs:
       TEST_LOCATION: ChromeTests\bin\Release
     strategy:
       fail-fast: false
-      matrix: 
-        batch: ${{ fromJSON(env.MATRIX_ARRAY) }}
+      matrix:
+        batch: ${{ fromJSON( inputs.matrixArray ) }}
     steps:
       - uses: actions/cache@v2
         name: Get Dependencies From Cache
