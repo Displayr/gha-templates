@@ -22,8 +22,8 @@ on:
         required: true
 
 jobs:
-  sms-dev-on-failure:
-    name: SMS dev on failure
+  send_sms:
+    name: Send SMS
     runs-on: ubuntu-latest
     env:
       MOBILE_NUMBER: ${{ inputs.devMobileNumber }}
