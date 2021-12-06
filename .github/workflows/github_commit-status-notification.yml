@@ -37,7 +37,7 @@ jobs:
       COMMIT_SHA: ${{ inputs.commitSha }}
       CONTEXT: ${{ inputs.context }}
       DESCRIPTION: ${{ inputs.description }}
-      GITHUB_TOKEN: ${{ inputs.token }}
+      GITHUB_TOKEN: ${{ inputs.githubToken }}
       REPO_NAME: ${{ github.repository }}
       RUN_ID: ${{ inputs.runId }}
       STATUS: ${{ inputs.status }}
