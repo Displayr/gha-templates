@@ -2,8 +2,8 @@ name: Reusable Workflow to Run Chrome Test Batches
 on:
   workflow_call:
     inputs:
-      matrixInput:
-        description: matrix array
+      matrixArray:
+        description: Array to use as batch matrix
         required: true
         type: string
       branch:
@@ -44,44 +44,31 @@ jobs:
       SIMPLY_SQL_VERSION: "1.8.0"
     steps:
     - uses: actions/cache@v2
-      name: Check Opensans Cache
-      id: cache-opensans
+      name: Check Cache
+      id: cache-dependencies
       with:
-        path: C:/ProgramData/chocolatey/lib/OpenSans/tools
-        key: ${{ runner.os }}-opensans-${{ env.OPENSANS_VERSION }}
-    - name: Install Opensans
-      if: steps.cache-opensans.outputs.cache-hit != 'true'
-      run: choco install -y opensans --version ${{ env.OPENSANS_VERSION }}
-    - uses: actions/cache@v2
-      name: Check Fontawesome Cache
-      id: cache-fontawesome
-      with:
-        path: ./font-awesome-${{ env.FONT_AWESOME_VERSION }}/fonts/fontawesome-webfont.ttf
-        key: ${{ runner.os }}-font-awesome-${{ env.FONT_AWESOME_VERSION }}
-    - name: Install Fontawesome
-      if: steps.cache-fontawesome.outputs.cache-hit != 'true'
+        path: |
+          C:\ProgramData\chocolatey\lib\OpenSans\tools
+          .\font-awesome-${{ env.FONT_AWESOME_VERSION }}\fonts\fontawesome-webfont.ttf
+          C:\Users\runneradmin\Documents\PowerShell\Modules\SimplySql\${{ env.SIMPLY_SQL_VERSION }}
+        key: opensans-${{ env.OPENSANS_VERSION }}-fontawesome-${{ env.FONT_AWESOME_VERSION }}-simplysql-${{ env.SIMPLY_SQL_VERSION }}
+    - name: Install Dependencies
+      if: steps.cache-dependencies.outputs.cache-hit != 'true'
       run: |
+        choco install -y opensans --version ${{ env.OPENSANS_VERSION }}
         Add-Type -AssemblyName System.IO.Compression.FileSystem
         $FontAwesomeUri = "https://github.com/FortAwesome/Font-Awesome/archive/v${{ env.FONT_AWESOME_VERSION }}.zip"
         $FontAwesome = "font-awesome-${{ env.FONT_AWESOME_VERSION }}.zip"
         Invoke-WebRequest $FontAwesomeUri -OutFile $FontAwesome 
         [System.IO.Compression.ZipFile]::ExtractToDirectory($FontAwesome, "./")
-    - uses: actions/cache@v2
-      name: Check Simplysql Cache
-      id: cache-simplysql
-      with:
-        path: C:\Users\runneradmin\Documents\PowerShell\Modules\SimplySql\${{ env.SIMPLY_SQL_VERSION }}
-        key: ${{ runner.os }}-simplysql-${{ env.SIMPLY_SQL_VERSION }}
-    - name: Install SimplySql
-      if: steps.cache-simplysql.outputs.cache-hit != 'true'
-      run: |
         Install-Module -Name SimplySql -RequiredVersion ${{ env.SIMPLY_SQL_VERSION }} -Confirm:$False -Force
 
   run_batch:
     name: Run Chrome Test Batches
     runs-on: windows-2019
-    needs: [install-dependencies-to-cache]
+    needs: [install_dependencies_to_cache]
     env:
+      MATRIX_ARRAY: ${{ inputs.matrixArray }}
       BRANCH: ${{ inputs.branch }}
       BUILD_NUMBER: ${{ inputs.buildNumber }}
       COMMIT_SHA: ${{ inputs.commitSha }}
@@ -98,31 +85,24 @@ jobs:
       TEST_LOCATION: ChromeTests\bin\Release
     strategy:
       fail-fast: false
-      matrix: 
-        batch: ${{ inputs.matrixInput }}
+      matrix:
+        batch: ${{ fromJSON( inputs.matrixArray ) }}
     steps:
       - uses: actions/cache@v2
-        name: Get Opensans from cache
-        id: cache-opensans
+        name: Get Dependencies From Cache
+        id: cache
         with:
-          path: C:/ProgramData/chocolatey/lib/OpenSans
-          key: ${{ runner.os }}-opensans-${{ env.OPENSANS_VERSION }}
-      - uses: actions/cache@v2
-        name: Get Fontawesome from cache
-        id: cache-fontawesome
-        with:
-          path: ./font-awesome-${{ env.FONT_AWESOME_VERSION }}
-          key: ${{ runner.os }}-font-awesome-${{ env.FONT_AWESOME_VERSION }}
-      - uses: actions/cache@v2
-        name: Get SimplySql from cache
-        id: cache-simplysql
-        with:
-          path: C:\Users\runneradmin\Documents\PowerShell\Modules\SimplySql
-          key: ${{ runner.os }}-simplysql-${{ env.SIMPLY_SQL_VERSION }}
-      - name: Fontawesome set HKCU
+          path: |
+            C:\ProgramData\chocolatey\lib\OpenSans\tools
+            .\font-awesome-${{ env.FONT_AWESOME_VERSION }}\fonts\fontawesome-webfont.ttf
+            C:\Users\runneradmin\Documents\PowerShell\Modules\SimplySql\${{ env.SIMPLY_SQL_VERSION }}
+          key: opensans-${{ env.OPENSANS_VERSION }}-fontawesome-${{ env.FONT_AWESOME_VERSION }}-simplysql-${{ env.SIMPLY_SQL_VERSION }}
+      - name: Set OpenSans and Fontawesome HKCU
         run: |
+          Get-ChildItem -Path C:\ProgramData\chocolatey\lib\OpenSans\tools\*.ttf `
+            | %{ Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" -Name "$($_.Basename) (TrueType)" -Type STRING -Value $_.fullname }
           $FontPath = Join-Path $pwd font-awesome-${{ env.FONT_AWESOME_VERSION }}\fonts\fontawesome-webfont.ttf
-          Set-ItemProperty -path "HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" -name "FontAwesome" -value "$FontPath"
+          Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" -Name "FontAwesome" -Value "$FontPath"
       - name: Download and Extract Release
         run: |
           $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.7z?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
