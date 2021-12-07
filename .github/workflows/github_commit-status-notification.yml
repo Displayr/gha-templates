@@ -42,5 +42,5 @@ jobs:
       - name: update
         run: |
           curl -X POST -H "Authorization: Bearer ${{ env.GITHUB_TOKEN }}"  \
-            -d '{"state": "${{ env.STATUS }}", "description": "${{ env.DESCRIPTION }}", "context": "${{ env.CONTEXT }}," "target_url": "https://github.com/${{ env.REPO_NAME }}/actions/runs/${{ env.RUN_ID }}"}' \
+            -d '{"state": "${{ env.STATUS }}", "description": "${{ env.DESCRIPTION }}", "context": "${{ env.CONTEXT }}", "target_url": "https://github.com/${{ env.REPO_NAME }}/actions/runs/${{ env.RUN_ID }}"}' \
             https://api.github.com/repos/${{ env.REPO_NAME }}/statuses/${{ env.COMMIT_SHA }}
