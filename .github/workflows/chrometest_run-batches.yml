@@ -73,24 +73,24 @@ jobs:
         [System.IO.Compression.ZipFile]::ExtractToDirectory($FontAwesome, "./")
         Install-Module -Name SimplySql -RequiredVersion ${{ env.SIMPLY_SQL_VERSION }} -Confirm:$False -Force
 
-    download_test:
-      name: ChromeInABox Setup
-      runs-on: windows-2019
-      env:
-        TOKEN_CONTAINER_BUILD: ${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}
-        BUILD_NUMBER: ${{ inputs.buildNumber }}
-        ENDPOINT_CHROMETEST: ${{ inputs.endpointChromeTests }}
-      steps:
-        - name: Download and Extract Release
-          run: |
-            $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.7z?${{ env.TOKEN_CONTAINER_BUILD }}"
-            Invoke-WebRequest -Uri $uri -OutFile ChromeTests.7z
-            7z x -y .\ChromeTests.7z
-        - uses: actions/upload-artifact@v2
-          with:
-            name: chromeInABox
-            path: ChromeTests\
-            retention-days: 2
+  download_test:
+    name: ChromeInABox Setup
+    runs-on: windows-2019
+    env:
+      TOKEN_CONTAINER_BUILD: ${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}
+      BUILD_NUMBER: ${{ inputs.buildNumber }}
+      ENDPOINT_CHROMETEST: ${{ inputs.endpointChromeTests }}
+    steps:
+      - name: Download and Extract Release
+        run: |
+          $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.7z?${{ env.TOKEN_CONTAINER_BUILD }}"
+          Invoke-WebRequest -Uri $uri -OutFile ChromeTests.7z
+          7z x -y .\ChromeTests.7z
+      - uses: actions/upload-artifact@v2
+        with:
+          name: chromeInABox
+          path: ChromeTests\
+          retention-days: 2
 
   run_batch:
     name: Run Batch
