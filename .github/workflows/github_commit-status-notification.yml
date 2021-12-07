@@ -6,10 +6,6 @@ on:
         description: The commit sha used for this build
         required: true
         type: string
-      githubToken: 
-        description: Github PAT
-        required: true
-        type: string
       runId:
         description: Github run id
         required: true
@@ -26,18 +22,19 @@ on:
         description: Description of the check that is being run
         required: true
         type: string
+    secrets:
+      githubToken:
+        required: true
 
 jobs:
   update:
     name: Update Commit Status
     runs-on: ubuntu-latest
     env:
-      BRANCH: ${{ inputs.branch }}
-      BUILD_NUMBER: ${{ inputs.buildNumber }}
       COMMIT_SHA: ${{ inputs.commitSha }}
       CONTEXT: ${{ inputs.context }}
       DESCRIPTION: ${{ inputs.description }}
-      GITHUB_TOKEN: ${{ inputs.githubToken }}
+      GITHUB_TOKEN: ${{ secrets.githubToken }}
       REPO_NAME: ${{ github.repository }}
       RUN_ID: ${{ inputs.runId }}
       STATUS: ${{ inputs.status }}
@@ -45,5 +42,5 @@ jobs:
       - name: update
         run: |
           curl -X POST -H "Authorization: Bearer ${{ env.GITHUB_TOKEN }}"  \
-            -d '{"state": ${{ env.STATUS }}, "description": ${{ env.DESCRIPTION }}, "context": ${{ env.CONTEXT }}, "target_url": "https://github.com/${{ env.REPO_NAME }}/actions/runs/${{ env.RUN_ID }}"}' \
-            https://api.github.com/repos/${{ env.REPO_NAME }}statuses/${{ env.COMMIT_SHA }}
+            -d '{"state": "${{ env.STATUS }}", "description": "${{ env.DESCRIPTION }}", "context": "${{ env.CONTEXT }}", "target_url": "https://github.com/${{ env.REPO_NAME }}/actions/runs/${{ env.RUN_ID }}"}' \
+            https://api.github.com/repos/${{ env.REPO_NAME }}/statuses/${{ env.COMMIT_SHA }}
