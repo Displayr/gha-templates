@@ -73,23 +73,39 @@ jobs:
         [System.IO.Compression.ZipFile]::ExtractToDirectory($FontAwesome, "./")
         Install-Module -Name SimplySql -RequiredVersion ${{ env.SIMPLY_SQL_VERSION }} -Confirm:$False -Force
 
+  download_test:
+    name: Download Testfiles
+    runs-on: windows-2019
+    env:
+      TOKEN_CONTAINER_BUILD: ${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}
+      BUILD_NUMBER: ${{ inputs.buildNumber }}
+      ENDPOINT_CHROMETEST: ${{ inputs.endpointChromeTests }}
+    steps:
+      - name: Download and Extract Release
+        run: |
+          $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.7z?${{ env.TOKEN_CONTAINER_BUILD }}"
+          Invoke-WebRequest -Uri $uri -OutFile ChromeTests.7z
+      - uses: actions/upload-artifact@v2
+        with:
+          name: chromeInABox
+          path: ChromeTests.7z
+          retention-days: 1
+
   run_batch:
     name: Run Batch
     runs-on: windows-2019
-    needs: [install_dependencies_to_cache, generate_matrix]
+    needs: [install_dependencies_to_cache, generate_matrix, download_test]
     env:
       BRANCH: ${{ inputs.branch }}
       BUILD_NUMBER: ${{ inputs.buildNumber }}
       COMMIT_SHA: ${{ inputs.commitSha }}
       CONNECTION_STRING_AUTOTEST_DB: ${{ secrets.CONNECTION_STRING_AUTOTEST_DB }}
-      ENDPOINT_CHROMETEST: ${{ inputs.endpointChromeTests }}
       ENDPOINT_OUTPUT_SCREENSHOTS: ${{ inputs.endpointOutputScreenshots }}
       FONT_AWESOME_VERSION: "4.7.0"
       OPENSANS_VERSION: "2.010"
       SIMPLY_SQL_VERSION: "1.8.0"
       ORIGINAL_RESULT_FILE: OriginalTestResult.xml
       RERUN_RESULT_FILE: RerunTestResult.xml
-      TOKEN_CONTAINER_BUILD: ${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}
       TOKEN_CONTAINER_SCREENSHOTS: ${{ secrets.ACCESS_TOKEN_CONTAINER_SCREENSHOTS }}
       TEST_LOCATION: ChromeTests\bin\Release
     strategy:
@@ -112,11 +128,12 @@ jobs:
             | %{ Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" -Name "$($_.Basename) (TrueType)" -Type STRING -Value $_.fullname }
           $FontPath = Join-Path $pwd font-awesome-${{ env.FONT_AWESOME_VERSION }}\fonts\fontawesome-webfont.ttf
           Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" -Name "FontAwesome" -Value "$FontPath"
-      - name: Download and Extract Release
-        run: |
-          $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.7z?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
-          Invoke-WebRequest -Uri $uri -OutFile ChromeTests.7z
-          7z x -y .\ChromeTests.7z
+      - name: Get ChromeInABox Tests From Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: chromeInABox
+      - name: Extract Test Files
+        run: 7z x -y .\ChromeTests.7z
       - name: Run Tests
         id: runTests
         timeout-minutes: 30
