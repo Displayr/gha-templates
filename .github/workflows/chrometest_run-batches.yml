@@ -74,7 +74,7 @@ jobs:
         Install-Module -Name SimplySql -RequiredVersion ${{ env.SIMPLY_SQL_VERSION }} -Confirm:$False -Force
 
   download_test:
-    name: ChromeInABox Setup
+    name: Download Testfiles
     runs-on: windows-2019
     env:
       TOKEN_CONTAINER_BUILD: ${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}
@@ -85,12 +85,11 @@ jobs:
         run: |
           $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.7z?${{ env.TOKEN_CONTAINER_BUILD }}"
           Invoke-WebRequest -Uri $uri -OutFile ChromeTests.7z
-          7z x -y .\ChromeTests.7z
       - uses: actions/upload-artifact@v2
         with:
           name: chromeInABox
-          path: ChromeTests\
-          retention-days: 2
+          path: ChromeTests.7z
+          retention-days: 1
 
   run_batch:
     name: Run Batch
@@ -133,6 +132,8 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: chromeInABox
+      - name: Extract Test Files
+        run: 7z x -y .\ChromeTests.7z
       - name: Run Tests
         id: runTests
         timeout-minutes: 30
