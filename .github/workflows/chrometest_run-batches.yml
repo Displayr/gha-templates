@@ -2,8 +2,8 @@ name: Reusable Workflow to Run Chrome Test Batches
 on:
   workflow_call:
     inputs:
-      matrixArray:
-        description: Array to use as batch matrix
+      batchNumber:
+        description: Number of batches to run
         required: true
         type: string
       branch:
@@ -35,6 +35,16 @@ on:
         required: true
 
 jobs:
+  generate_matrix:
+    name: Generate Matrix Array
+    runs-on: ubuntu-latest
+    outputs:
+      matrixArray: ${{ steps.matrixArray.outputs.arr }}
+    steps:
+      - name: Generate Batch Matrix
+        id: matrixArray
+        run: echo "::set-output name=arr::[$(seq -s ", " 0 $[ ${{ inputs.batchNumber }} - 1 ])]"
+
   install_dependencies_to_cache:
     name: Install Dependencies to Cache
     runs-on: windows-2019
@@ -66,9 +76,8 @@ jobs:
   run_batch:
     name: Run Batch
     runs-on: windows-2019
-    needs: [install_dependencies_to_cache]
+    needs: [install_dependencies_to_cache, generate_matrix]
     env:
-      MATRIX_ARRAY: ${{ inputs.matrixArray }}
       BRANCH: ${{ inputs.branch }}
       BUILD_NUMBER: ${{ inputs.buildNumber }}
       COMMIT_SHA: ${{ inputs.commitSha }}
@@ -86,7 +95,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        batch: ${{ fromJSON( inputs.matrixArray ) }}
+        batch: ${{ fromJSON( needs.generate_matrix.outputs.matrixArray ) }}
     steps:
       - uses: actions/cache@v2
         name: Get Dependencies From Cache
