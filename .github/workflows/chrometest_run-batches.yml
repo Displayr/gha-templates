@@ -91,7 +91,7 @@ jobs:
       RERUN_RESULT_FILE: RerunTestResult.xml
       TOKEN_CONTAINER_BUILD: ${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}
       TOKEN_CONTAINER_SCREENSHOTS: ${{ secrets.ACCESS_TOKEN_CONTAINER_SCREENSHOTS }}
-      TEST_LOCATION: outputs
+      TEST_LOCATION: Chrometests/bin/Release
     strategy:
       fail-fast: false
       matrix:
@@ -116,11 +116,13 @@ jobs:
         run: |
           $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.7z?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
           Invoke-WebRequest -Uri $uri -OutFile ChromeTests.7z
+          New-Item Chrometests/bin/Release -ItemType Directory -Force
           7z x -y .\ChromeTests.7z
+          Copy-Item outputs/* -Destination Chrometests/bin/Release -Recurse
           ls
       - name: Run Tests
         id: runTests
-        timeout-minutes: 30
+        timeout-minutes: 15
         continue-on-error: true
         run: |
           cd ${{ env.TEST_LOCATION }}
