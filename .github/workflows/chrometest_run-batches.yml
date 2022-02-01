@@ -124,25 +124,25 @@ jobs:
         continue-on-error: true
         run: |
           cd ${{ env.TEST_LOCATION }}
-          .\nunit3-console.exe ChromeTests.dll --encoding=utf-8 --domain=None --inprocess --labels=All --testparam non-interactive=true `
+          .\nunit3-console.exe ChromeTests.dll --encoding=utf-8 --domain=None --inprocess --labels=All --testparam non-interactive=true ` --trace=Verbose
             --result=${{ env.ORIGINAL_RESULT_FILE }} `
             --where "cat != DontRunForReleaseBuild and cat == Batch${{ matrix.batch }}"
-      - name: Rerun Failed Test
-        if: steps.runTests.outcome == 'failure'
-        id: rerunTests
-        timeout-minutes: 30
-        run: |
-          cd ${{ env.TEST_LOCATION }}
-          $OriginalFailTestResult = "OriginalFailTestResult.txt"
-          Select-Xml -XPath '//test-case' `
-            -Path '${{ env.ORIGINAL_RESULT_FILE }}' `
-            | Select-Object -Expand Node `
-            | where {$_.result -eq "Failed"} `
-            | Select-Object -Expand 'fullname' `
-            | Out-File -FilePath $OriginalFailTestResult
-          .\nunit3-console.exe ChromeTests.dll --encoding=utf-8 --domain=None --inprocess --labels=All --testparam non-interactive=true `
-            --result=${{ env.RERUN_RESULT_FILE }} `
-            --testlist $OriginalFailTestResult
+      # - name: Rerun Failed Test
+      #   if: steps.runTests.outcome == 'failure'
+      #   id: rerunTests
+      #   timeout-minutes: 30
+      #   run: |
+      #     cd ${{ env.TEST_LOCATION }}
+      #     $OriginalFailTestResult = "OriginalFailTestResult.txt"
+      #     Select-Xml -XPath '//test-case' `
+      #       -Path '${{ env.ORIGINAL_RESULT_FILE }}' `
+      #       | Select-Object -Expand Node `
+      #       | where {$_.result -eq "Failed"} `
+      #       | Select-Object -Expand 'fullname' `
+      #       | Out-File -FilePath $OriginalFailTestResult
+      #     .\nunit3-console.exe ChromeTests.dll --encoding=utf-8 --domain=None --inprocess --labels=All --testparam non-interactive=true `
+      #       --result=${{ env.RERUN_RESULT_FILE }} `
+      #       --testlist $OriginalFailTestResult
       - name: Upload Artifacts
         if: always() && steps.rerunTests.outcome == 'failure'
         run: |
