@@ -122,11 +122,11 @@ jobs:
           ls
       - name: Run Tests
         id: runTests
-        timeout-minutes: 15
+        timeout-minutes: 10
         continue-on-error: true
         run: |
           cd ${{ env.TEST_LOCATION }}
-          .\nunit3-console.exe ChromeTests.dll --encoding=utf-8 --domain=None --inprocess --labels=All --testparam non-interactive=true --trace=Verbose `
+          .\nunit3-console.exe ChromeTests.dll --encoding=utf-8 --domain=None --inprocess --labels=All --testparam non-interactive=true --trace=Verbose --x86`
             --result=${{ env.ORIGINAL_RESULT_FILE }} `
             --where "cat != DontRunForReleaseBuild and cat == Batch${{ matrix.batch }}"
       # - name: Rerun Failed Test
