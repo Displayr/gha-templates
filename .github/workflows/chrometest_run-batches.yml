@@ -124,7 +124,7 @@ jobs:
         continue-on-error: true
         run: |
           cd ${{ env.TEST_LOCATION }}
-          .\nunit3-console.exe ChromeTests.dll --encoding=utf-8 --domain=None --inprocess --labels=All --testparam non-interactive=true ` --trace=Verbose
+          .\nunit3-console.exe ChromeTests.dll --encoding=utf-8 --domain=None --inprocess --labels=All --testparam non-interactive=true --trace=Verbose `
             --result=${{ env.ORIGINAL_RESULT_FILE }} `
             --where "cat != DontRunForReleaseBuild and cat == Batch${{ matrix.batch }}"
       # - name: Rerun Failed Test
