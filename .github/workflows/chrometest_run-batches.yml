@@ -116,10 +116,11 @@ jobs:
         run: |
           $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.7z?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
           Invoke-WebRequest -Uri $uri -OutFile ChromeTests.7z
-          New-Item Chrometests/bin/Release -ItemType Directory -Force
           7z x -y .\ChromeTests.7z
-          Copy-Item outputs/* -Destination Chrometests/bin/Release -Recurse
-          ls
+          cd Chrometests/bin/Release
+          $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/SharedWebUi.7z?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
+          Invoke-WebRequest -Uri $uri -OutFile SharedWebUi.7z
+          7z x -y .\SharedWebUi.7z
       - name: Run Tests
         id: runTests
         timeout-minutes: 10
