@@ -123,7 +123,7 @@ jobs:
           7z x -y .\SharedWebUi.7z
       - name: Run Tests
         id: runTests
-        timeout-minutes: 10
+        timeout-minutes: 30
         continue-on-error: true
         run: |
           cd ${{ env.TEST_LOCATION }}
