@@ -118,6 +118,7 @@ jobs:
           Invoke-WebRequest -Uri $uri -OutFile ChromeTests.7z
           7z x -y .\ChromeTests.7z
           $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/SharedWebUi.7z?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
+          cd Chrometests/bin/Release
           Invoke-WebRequest -Uri $uri -OutFile SharedWebUi.7z
           7z x -y .\SharedWebUi.7z
       - name: Run Tests
