@@ -117,10 +117,9 @@ jobs:
           $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.7z?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
           Invoke-WebRequest -Uri $uri -OutFile ChromeTests.7z
           7z x -y .\ChromeTests.7z
-          $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/SharedWebUi.7z?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
+          $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/SharedWebUi.dll?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
           cd Chrometests/bin/Release
-          Invoke-WebRequest -Uri $uri -OutFile SharedWebUi.7z
-          7z x -y .\SharedWebUi.7z
+          Invoke-WebRequest -Uri $uri -OutFile SharedWebUi.dll
       - name: Run Tests
         id: runTests
         timeout-minutes: 30
