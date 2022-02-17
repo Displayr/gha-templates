@@ -100,7 +100,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        batch: ${{ fromJSON( needs.generate_matrix.outputs.matrixArray ) }}
+        batch: [0] #${{ fromJSON( needs.generate_matrix.outputs.matrixArray ) }}
     steps:
       - uses: actions/cache@v2
         name: Get Dependencies From Cache
@@ -133,9 +133,10 @@ jobs:
         timeout-minutes: 30
         continue-on-error: true
         run: |
+          echo "running tests: $env:TESTS"
           cd ${{ env.TEST_LOCATION }}
           .\nunit3-console.exe ChromeTests.dll --encoding=utf-8 --domain=None --inprocess --labels=All --testparam non-interactive=true --trace=Verbose `
-            -testlist="$env:TESTS"
+            --testlist="$env:TESTS"
       - name: Rerun Failed Test
         if: steps.runTests.outcome == 'failure'
         id: rerunTests
