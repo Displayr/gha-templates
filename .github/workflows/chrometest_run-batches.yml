@@ -156,18 +156,19 @@ jobs:
             --testlist $OriginalFailTestResult
       # Assuming average of 30 chrometests per day, total size of text files for a run should be ~300 kb, these will expire after 7 days, so 7x30x300 = 63 MB used at any time
       # There is no limit on number of caches, only size limit of 10 GB, so this is no problem
-      - name: Cache Test Outcomes
-        if: always()
-        uses: actions/cache@v2
-        with:
-          key: chrometest-outcomes-${{ env.BUILD_NUMBER }}
-          path: |
-            Batch${{ matrix.batch }}PassedChrometests-$env:BUILD_NUMBER.txt
-            Batch${{ matrix.batch }}FailedChrometests-$env:BUILD_NUMBER.txt
+      # - name: Cache Test Outcomes
+      #   if: always()
+      #   uses: actions/cache@v2
+      #   with:
+      #     key: chrometest-outcomes-${{ env.BUILD_NUMBER }}
+      #     path: |
+      #       Batch${{ matrix.batch }}PassedChrometests-$env:BUILD_NUMBER.txt
+      #       Batch${{ matrix.batch }}FailedChrometests-$env:BUILD_NUMBER.txt
       # Determine passed and failed tests for run and rerun combined, then we can cache these for reruns to only run failed or not run tests
       - name: Save Test Outcomes
         if: always()
         run: |
+          exit 0
           Select-Xml -XPath '//test-case' `
             -Path 'OriginalFailTestResult.txt' `
             | Select-Object -Expand Node `
@@ -181,6 +182,7 @@ jobs:
       - name: Report Testruns to Database
         if: always()
         run: |
+          exit 0
           Import-Module -Name SimplySql
           cd ${{ env.TEST_LOCATION }}
           Open-MySqlConnection -ConnectionString "${{ env.CONNECTION_STRING_AUTOTEST_DB }}"
