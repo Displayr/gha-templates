@@ -128,7 +128,7 @@ jobs:
           Invoke-WebRequest -Uri $uri -OutFile SharedWebUi.dll
       - name: Run Tests
         env:
-          TESTS: ${{ github.event.inputs.tests }}
+          TESTS: ${{ inputs.tests }}
         id: runTests
         timeout-minutes: 30
         continue-on-error: true
