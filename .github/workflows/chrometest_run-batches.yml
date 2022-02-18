@@ -136,7 +136,6 @@ jobs:
           echo "running tests: $env:TESTS"
           cd ${{ env.TEST_LOCATION }}
           .\nunit3-console.exe ChromeTests.dll --encoding=utf-8 --domain=None --inprocess --labels=All --testparam non-interactive=true --trace=Verbose `
-            --result=${{ env.ORIGINAL_RESULT_FILE }}
             --test="$env:TESTS"
       - name: Rerun Failed Test
         if: steps.runTests.outcome == 'failure'
