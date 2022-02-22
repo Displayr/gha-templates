@@ -26,8 +26,8 @@ on:
         description: The name of the endpoint to store output screenshots
         required: true
         type: string
-      tests:
-        description: Tests to run
+      source:
+        description: Source of the calling workflow. This is either 'apppveyor' or 'gha'
         required: true
         type: string
     secrets:
@@ -119,16 +119,29 @@ jobs:
           Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" -Name "FontAwesome" -Value "$FontPath"
       - name: Download and Extract Release
         run: |
-          $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.tgz?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
-          Invoke-WebRequest -Uri $uri -OutFile ChromeTests.tgz
-          # 7z x -y .\ChromeTests.7z
-          tar -zxf ChromeTests.tgz
-          $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/SharedWebUi.dll?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
-          cd Chrometests/bin/Release
-          Invoke-WebRequest -Uri $uri -OutFile SharedWebUi.dll
+          # retry in case of failed download
+          for ($i=0; $i -le 2; $i++) {
+            try {
+              # Can remove this if else block once we have migrated to Github Actions
+              if ("${{ inputs.source }}" -eq "appveyor") {
+                $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.7z?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
+                Invoke-WebRequest -Uri $uri -OutFile ChromeTests.7z
+                7z x -y .\ChromeTests.7z
+              } else {
+                $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.tgz?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
+                Invoke-WebRequest -Uri $uri -OutFile ChromeTests.tgz
+                tar -zxf ChromeTests.tgz
+                $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/SharedWebUi.dll?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
+                cd Chrometests/bin/Release
+                Invoke-WebRequest -Uri $uri -OutFile SharedWebUi.dll
+              }
+              break
+            } catch {
+              echo "Error downloading:`n$_"
+            }
+            throw "Problem downloading chrometests"
+          }
       - name: Run Tests
-        env:
-          TESTS: ${{ inputs.tests }}
         id: runTests
         timeout-minutes: 30
         continue-on-error: true
@@ -138,7 +151,6 @@ jobs:
           .\nunit3-console.exe ChromeTests.dll --encoding=utf-8 --domain=None --inprocess --labels=All --testparam non-interactive=true --trace=Verbose `
             --result=${{ env.ORIGINAL_RESULT_FILE }} `
             --where "cat != DontRunForReleaseBuild and cat == Batch${{ matrix.batch }}"
-            #--test="$env:TESTS"
       - name: Rerun Failed Test
         if: steps.runTests.outcome == 'failure'
         id: rerunTests
