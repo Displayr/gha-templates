@@ -96,7 +96,6 @@ jobs:
       TOKEN_CONTAINER_BUILD: ${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}
       TOKEN_CONTAINER_SCREENSHOTS: ${{ secrets.ACCESS_TOKEN_CONTAINER_SCREENSHOTS }}
       TEST_LOCATION: Chrometests\bin\Release
-      RUN_ATTEMPT: ${{ github.run_attempt }}
     strategy:
       fail-fast: false
       matrix:
@@ -166,16 +165,6 @@ jobs:
           .\nunit3-console.exe ChromeTests.dll --encoding=utf-8 --domain=None --inprocess --labels=All --testparam non-interactive=true `
             --result=${{ env.RERUN_RESULT_FILE }} `
             --testlist $OriginalFailTestResult
-      # Assuming average of 30 chrometests per day, total size of text files for a run should be ~300 kb, these will expire after 7 days, so 7x30x300 = 63 MB used at any time
-      # There is no limit on number of caches, only size limit of 10 GB, so this is no problem
-      # - name: Cache Test Outcomes
-      #   if: always()
-      #   uses: actions/cache@v2
-      #   with:
-      #     key: chrometest-outcomes-${{ env.BUILD_NUMBER }}
-      #     path: |
-      #       Batch${{ matrix.batch }}PassedChrometests-$env:BUILD_NUMBER.txt
-      #       Batch${{ matrix.batch }}FailedChrometests-$env:BUILD_NUMBER.txt
       # Determine passed and failed tests for run and rerun combined, then we can cache these for reruns to only run failed or not run tests
       - name: Save Test Outcomes
         if: always()
