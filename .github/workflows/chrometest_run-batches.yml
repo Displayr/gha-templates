@@ -95,7 +95,7 @@ jobs:
       RERUN_RESULT_FILE: RerunTestResult.xml
       TOKEN_CONTAINER_BUILD: ${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}
       TOKEN_CONTAINER_SCREENSHOTS: ${{ secrets.ACCESS_TOKEN_CONTAINER_SCREENSHOTS }}
-      TEST_LOCATION: Chrometests/bin/Release
+      TEST_LOCATION: Chrometests\bin\Release
       RUN_ATTEMPT: ${{ github.run_attempt }}
     strategy:
       fail-fast: false
@@ -194,7 +194,6 @@ jobs:
       - name: Report Testruns to Database
         if: always()
         run: |
-          exit 0
           Import-Module -Name SimplySql
           cd ${{ env.TEST_LOCATION }}
           Open-MySqlConnection -ConnectionString "${{ env.CONNECTION_STRING_AUTOTEST_DB }}"
