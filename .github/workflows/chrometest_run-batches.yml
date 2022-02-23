@@ -165,17 +165,6 @@ jobs:
           .\nunit3-console.exe ChromeTests.dll --encoding=utf-8 --domain=None --inprocess --labels=All --testparam non-interactive=true `
             --result=${{ env.RERUN_RESULT_FILE }} `
             --testlist $OriginalFailTestResult
-      # Determine passed and failed tests for run and rerun combined, then we can cache these for reruns to only run failed or not run tests
-      - name: Save Test Outcomes
-        if: always()
-        run: |
-          exit 0
-          Select-Xml -XPath '//test-case' `
-            -Path 'OriginalFailTestResult.txt' `
-            | Select-Object -Expand Node `
-            | where {$_.result -eq "Passed"} `
-            | Select-Object -Expand 'fullname' `
-            | Out-File -FilePath Batch${{ matrix.batch }}PassedChrometests-$env:BUILD_NUMBER.txt
       - name: Upload Artifacts
         if: always() && steps.rerunTests.outcome == 'failure'
         run: |
