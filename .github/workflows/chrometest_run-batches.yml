@@ -95,7 +95,7 @@ jobs:
       RERUN_RESULT_FILE: RerunTestResult.xml
       TOKEN_CONTAINER_BUILD: ${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}
       TOKEN_CONTAINER_SCREENSHOTS: ${{ secrets.ACCESS_TOKEN_CONTAINER_SCREENSHOTS }}
-      TEST_LOCATION: Chrometests\bin\Release
+      TEST_LOCATION: ChromeTests\bin\Release
     strategy:
       fail-fast: false
       matrix:
