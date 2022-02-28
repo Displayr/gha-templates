@@ -62,16 +62,6 @@ jobs:
           .\font-awesome-${{ env.FONT_AWESOME_VERSION }}\fonts\fontawesome-webfont.ttf
           C:\Users\runneradmin\Documents\PowerShell\Modules\SimplySql\${{ env.SIMPLY_SQL_VERSION }}
         key: opensans-${{ env.OPENSANS_VERSION }}-fontawesome-${{ env.FONT_AWESOME_VERSION }}-simplysql-${{ env.SIMPLY_SQL_VERSION }}
-    - name: Install Dependencies
-      if: steps.cache-dependencies.outputs.cache-hit == 'false'
-      run: |
-        choco install -y opensans --version ${{ env.OPENSANS_VERSION }}
-        Add-Type -AssemblyName System.IO.Compression.FileSystem
-        $FontAwesomeUri = "https://github.com/FortAwesome/Font-Awesome/archive/v${{ env.FONT_AWESOME_VERSION }}.zip"
-        $FontAwesome = "font-awesome-${{ env.FONT_AWESOME_VERSION }}.zip"
-        Invoke-WebRequest $FontAwesomeUri -OutFile $FontAwesome 
-        [System.IO.Compression.ZipFile]::ExtractToDirectory($FontAwesome, "./")
-        Install-Module -Name SimplySql -RequiredVersion ${{ env.SIMPLY_SQL_VERSION }} -Confirm:$False -Force
 
   run_batch:
     name: Run Batch
@@ -106,6 +96,16 @@ jobs:
             .\font-awesome-${{ env.FONT_AWESOME_VERSION }}\fonts\fontawesome-webfont.ttf
             C:\Users\runneradmin\Documents\PowerShell\Modules\SimplySql\${{ env.SIMPLY_SQL_VERSION }}
           key: opensans-${{ env.OPENSANS_VERSION }}-fontawesome-${{ env.FONT_AWESOME_VERSION }}-simplysql-${{ env.SIMPLY_SQL_VERSION }}
+      - name: Install Dependencies
+        if: steps.cache.outputs.cache-hit == 'false'
+        run: |
+          choco install -y opensans --version ${{ env.OPENSANS_VERSION }}
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $FontAwesomeUri = "https://github.com/FortAwesome/Font-Awesome/archive/v${{ env.FONT_AWESOME_VERSION }}.zip"
+          $FontAwesome = "font-awesome-${{ env.FONT_AWESOME_VERSION }}.zip"
+          Invoke-WebRequest $FontAwesomeUri -OutFile $FontAwesome 
+          [System.IO.Compression.ZipFile]::ExtractToDirectory($FontAwesome, "./")
+          Install-Module -Name SimplySql -RequiredVersion ${{ env.SIMPLY_SQL_VERSION }} -Confirm:$False -Force
       - name: Set OpenSans and Fontawesome HKCU
         run: |
           Get-ChildItem -Path C:\ProgramData\chocolatey\lib\OpenSans\tools\*.ttf `
