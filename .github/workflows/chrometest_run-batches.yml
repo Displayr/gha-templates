@@ -140,6 +140,7 @@ jobs:
         timeout-minutes: 30
         run: |
           cd ${{ env.TEST_LOCATION }}
+          Remove-Item '${{ env.TEST_LOCATION }}/Artifacts' -Recurse
           $OriginalFailTestResult = "OriginalFailTestResult.txt"
           Select-Xml -XPath '//test-case' `
             -Path '${{ env.ORIGINAL_RESULT_FILE }}' `
