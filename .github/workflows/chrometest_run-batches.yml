@@ -26,6 +26,10 @@ on:
         description: The name of the endpoint to store output screenshots
         required: true
         type: string
+      source:
+        description: Source of the calling workflow. This is either 'Appveyor' or 'Github Actions'
+        required: true
+        type: string
     secrets:
       CONNECTION_STRING_AUTOTEST_DB:
         required: true
