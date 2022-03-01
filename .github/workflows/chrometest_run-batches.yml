@@ -110,7 +110,7 @@ jobs:
             .\font-awesome-${{ env.FONT_AWESOME_VERSION }}\fonts\fontawesome-webfont.ttf
             C:\Users\runneradmin\Documents\PowerShell\Modules\SimplySql\${{ env.SIMPLY_SQL_VERSION }}
           key: opensans-${{ env.OPENSANS_VERSION }}-fontawesome-${{ env.FONT_AWESOME_VERSION }}-simplysql-${{ env.SIMPLY_SQL_VERSION }}
-      - name: Install Dependencies Tf Cache Fails
+      - name: Install Dependencies If Cache Fails
         if: steps.cache.outputs.cache-hit == 'false'
         run: |
           choco install -y opensans --version ${{ env.OPENSANS_VERSION }}
@@ -127,20 +127,13 @@ jobs:
           $FontPath = Join-Path $pwd font-awesome-${{ env.FONT_AWESOME_VERSION }}\fonts\fontawesome-webfont.ttf
           Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" -Name "FontAwesome" -Value "$FontPath"
       - name: Download and Extract Release
-        id: getChromeInABoxArtifact
-        continue-on-error: true
-        run: |
-          $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.7z?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
-          Invoke-WebRequest -Uri $uri -OutFile ChromeTests.7z
-          7z x -y .\ChromeTests.7z
-      - name: Retry Download and Extract Release
-        if: steps.getChromeInABoxArtifact.outcome == 'failure'
         run: |
           # retry in case of failed download
           for ($i=0; $i -le 2; $i++) {
             try {
               # Can remove this if else block once we have migrated to Github Actions
               if ("${{ inputs.source }}" -eq "Github Actions" -or "${{ inputs.source }}" -eq "gha") {
+                echo "Downloading Chrometests for GHA build"
                 $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.tgz?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
                 Invoke-WebRequest -Uri $uri -OutFile ChromeTests.tgz
                 tar -zxf ChromeTests.tgz
@@ -148,6 +141,7 @@ jobs:
                 cd Chrometests/bin/Release
                 Invoke-WebRequest -Uri $uri -OutFile SharedWebUi.dll
               } else {
+                echo "Downloading Chrometests for Appveyor build"
                 $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.7z?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
                 Invoke-WebRequest -Uri $uri -OutFile ChromeTests.7z
                 7z x -y .\ChromeTests.7z
@@ -156,8 +150,10 @@ jobs:
             } catch {
               echo "Error downloading:`n$_"
             }
+            # Can only reach here if none of the downloads work, since we have used a break after a success
             throw "Problem downloading chrometests"
           }
+          echo "Download Successful"
       - name: Run Tests
         id: runTests
         timeout-minutes: 30
