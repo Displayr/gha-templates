@@ -27,7 +27,7 @@ on:
         required: true
         type: string
       source:
-        description: Source of the calling workflow. This is either 'apppveyor' or 'gha'
+        description: Source of the calling workflow. This is either 'Appveyor' or 'Github Actions'
         required: true
         type: string
     secrets:
@@ -66,16 +66,6 @@ jobs:
           .\font-awesome-${{ env.FONT_AWESOME_VERSION }}\fonts\fontawesome-webfont.ttf
           C:\Users\runneradmin\Documents\PowerShell\Modules\SimplySql\${{ env.SIMPLY_SQL_VERSION }}
         key: opensans-${{ env.OPENSANS_VERSION }}-fontawesome-${{ env.FONT_AWESOME_VERSION }}-simplysql-${{ env.SIMPLY_SQL_VERSION }}
-    - name: Install Dependencies
-      if: steps.cache-dependencies.outputs.cache-hit != 'true'
-      run: |
-        choco install -y opensans --version ${{ env.OPENSANS_VERSION }}
-        Add-Type -AssemblyName System.IO.Compression.FileSystem
-        $FontAwesomeUri = "https://github.com/FortAwesome/Font-Awesome/archive/v${{ env.FONT_AWESOME_VERSION }}.zip"
-        $FontAwesome = "font-awesome-${{ env.FONT_AWESOME_VERSION }}.zip"
-        Invoke-WebRequest $FontAwesomeUri -OutFile $FontAwesome 
-        [System.IO.Compression.ZipFile]::ExtractToDirectory($FontAwesome, "./")
-        Install-Module -Name SimplySql -RequiredVersion ${{ env.SIMPLY_SQL_VERSION }} -Confirm:$False -Force
 
   run_batch:
     name: Run Batch
@@ -110,6 +100,16 @@ jobs:
             .\font-awesome-${{ env.FONT_AWESOME_VERSION }}\fonts\fontawesome-webfont.ttf
             C:\Users\runneradmin\Documents\PowerShell\Modules\SimplySql\${{ env.SIMPLY_SQL_VERSION }}
           key: opensans-${{ env.OPENSANS_VERSION }}-fontawesome-${{ env.FONT_AWESOME_VERSION }}-simplysql-${{ env.SIMPLY_SQL_VERSION }}
+      - name: Install Dependencies
+        if: steps.cache.outputs.cache-hit == 'false'
+        run: |
+          choco install -y opensans --version ${{ env.OPENSANS_VERSION }}
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $FontAwesomeUri = "https://github.com/FortAwesome/Font-Awesome/archive/v${{ env.FONT_AWESOME_VERSION }}.zip"
+          $FontAwesome = "font-awesome-${{ env.FONT_AWESOME_VERSION }}.zip"
+          Invoke-WebRequest $FontAwesomeUri -OutFile $FontAwesome 
+          [System.IO.Compression.ZipFile]::ExtractToDirectory($FontAwesome, "./")
+          Install-Module -Name SimplySql -RequiredVersion ${{ env.SIMPLY_SQL_VERSION }} -Confirm:$False -Force
       - name: Set OpenSans and Fontawesome HKCU
         run: |
           Get-ChildItem -Path C:\ProgramData\chocolatey\lib\OpenSans\tools\*.ttf `
@@ -117,6 +117,14 @@ jobs:
           $FontPath = Join-Path $pwd font-awesome-${{ env.FONT_AWESOME_VERSION }}\fonts\fontawesome-webfont.ttf
           Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" -Name "FontAwesome" -Value "$FontPath"
       - name: Download and Extract Release
+        id: getChromeInABoxArtifact
+        continue-on-error: true
+        run: |
+          $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.7z?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
+          Invoke-WebRequest -Uri $uri -OutFile ChromeTests.7z
+          7z x -y .\ChromeTests.7z
+      - name: Retry Download and Extract Release
+        if: steps.getChromeInABoxArtifact.outcome == 'failure'
         run: |
           # retry in case of failed download
           for ($i=0; $i -le 2; $i++) {
@@ -155,6 +163,7 @@ jobs:
         timeout-minutes: 30
         run: |
           cd ${{ env.TEST_LOCATION }}
+          Remove-Item '${{ env.TEST_LOCATION }}/Artifacts' -Recurse
           $OriginalFailTestResult = "OriginalFailTestResult.txt"
           Select-Xml -XPath '//test-case' `
             -Path '${{ env.ORIGINAL_RESULT_FILE }}' `
