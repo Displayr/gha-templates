@@ -34,5 +34,5 @@ jobs:
           curl -XPOST https://api.twilio.com/2010-04-01/Accounts/${{ secrets.TWILIO_ACCOUNT_SID }}/Messages.json \
             --data-urlencode 'To=${{ env.MOBILE_NUMBER }}' \
             --data-urlencode 'From=${{ secrets.TWILIO_SOURCE_NUMBER }}' \
-            --data-urlencode $'Body=${{ env.SMS_BODY }}' \
+            --data-urlencode "Body=$SMS_BODY" \
             -u '${{ secrets.TWILIO_API_KEY }}:${{ secrets.TWILIO_API_SECRET }}'
