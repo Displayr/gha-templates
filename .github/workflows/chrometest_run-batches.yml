@@ -27,7 +27,7 @@ on:
         required: true
         type: string
       source:
-        description: Source of the calling workflow. This is either 'Appveyor' or 'Github Actions'
+        description: Source of the calling workflow. This is either 'Appveyor' or 'CircleCI'
         required: true
         type: string
     secrets:
@@ -131,18 +131,38 @@ jobs:
         timeout-minutes: 5
         continue-on-error: true
         run: |
-          echo "Downloading Chrometests for Appveyor build"
-          $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.7z?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
-          Invoke-WebRequest -Uri $uri -OutFile ChromeTests.7z
-          7z x -y .\ChromeTests.7z
+          if ("${{ inputs.source }}" -eq "CircleCI") {
+            echo "Downloading chrometests for CircleCI build"
+            $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.tgz?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
+            Invoke-WebRequest -Uri $uri -OutFile ChromeTests.tgz
+            tar -zxf ChromeTests.tgz
+            $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/SharedWebUi.dll?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
+            cd Chrometests/bin/Release
+            Invoke-WebRequest -Uri $uri -OutFile SharedWebUi.dll
+          } else {
+            echo "Downloading Chrometests for Appveyor build"
+            $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.7z?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
+            Invoke-WebRequest -Uri $uri -OutFile ChromeTests.7z
+            7z x -y .\ChromeTests.7z
+          }
           if (-not (Test-Path -Path $env:TEST_LOCATION) -or ($LastExitCode -ne 0)) { throw 7z Extraction Error }
       - name: Rerun Download
         if: steps.download.outcome == 'failure'
         run: |
-          echo "Retry Download"
-          $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.7z?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
-          Invoke-WebRequest -Uri $uri -OutFile ChromeTests.7z
-          7z x -y .\ChromeTests.7z
+          if ("${{ inputs.source }}" -eq "CircleCI") {
+            echo "Downloading chrometests for CircleCI build"
+            $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.tgz?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
+            Invoke-WebRequest -Uri $uri -OutFile ChromeTests.tgz
+            tar -zxf ChromeTests.tgz
+            $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/SharedWebUi.dll?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
+            cd Chrometests/bin/Release
+            Invoke-WebRequest -Uri $uri -OutFile SharedWebUi.dll
+          } else {
+            echo "Downloading Chrometests for Appveyor build"
+            $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.7z?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
+            Invoke-WebRequest -Uri $uri -OutFile ChromeTests.7z
+            7z x -y .\ChromeTests.7z
+          }
           if (-not (Test-Path -Path $env:TEST_LOCATION) -or ($LastExitCode -ne 0)) { throw 7z Extraction Error }
       - name: Run Tests
         id: runTests
