@@ -136,6 +136,8 @@ jobs:
             $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.tgz?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
             Invoke-WebRequest -Uri $uri -OutFile ChromeTests.tgz
             tar -zxf ChromeTests.tgz
+            ls 
+            ls Chrometests/bin/Release
             $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/SharedWebUi.dll?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
             cd Chrometests/bin/Release
             Invoke-WebRequest -Uri $uri -OutFile SharedWebUi.dll
@@ -145,7 +147,7 @@ jobs:
             Invoke-WebRequest -Uri $uri -OutFile ChromeTests.7z
             7z x -y .\ChromeTests.7z
           }
-          if (-not (Test-Path -Path $env:TEST_LOCATION) -or ($LastExitCode -ne 0)) { throw 7z Extraction Error }
+          if (-not (Test-Path -Path $env:TEST_LOCATION) -or ($LastExitCode -ne 0)) { throw "Extraction Error" }
       - name: Rerun Download
         if: steps.download.outcome == 'failure'
         run: |
@@ -163,7 +165,7 @@ jobs:
             Invoke-WebRequest -Uri $uri -OutFile ChromeTests.7z
             7z x -y .\ChromeTests.7z
           }
-          if (-not (Test-Path -Path $env:TEST_LOCATION) -or ($LastExitCode -ne 0)) { throw 7z Extraction Error }
+          if (-not (Test-Path -Path $env:TEST_LOCATION) -or ($LastExitCode -ne 0)) { throw "Extraction Error" }
       - name: Run Tests
         id: runTests
         timeout-minutes: 30
