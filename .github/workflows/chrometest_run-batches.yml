@@ -136,11 +136,9 @@ jobs:
             $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.tgz?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
             Invoke-WebRequest -Uri $uri -OutFile ChromeTests.tgz
             tar -zxf ChromeTests.tgz
-            ls 
-            ls Chrometests/bin/Release
             $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/SharedWebUi.dll?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
-            cd Chrometests/bin/Release
-            Invoke-WebRequest -Uri $uri -OutFile SharedWebUi.dll
+            Invoke-WebRequest -Uri $uri -OutFile Chrometests/bin/Release/SharedWebUi.dll
+            ls Chrometests/bin/Release
           } else {
             echo "Downloading Chrometests for Appveyor build"
             $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.7z?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
@@ -157,8 +155,7 @@ jobs:
             Invoke-WebRequest -Uri $uri -OutFile ChromeTests.tgz
             tar -zxf ChromeTests.tgz
             $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/SharedWebUi.dll?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
-            cd Chrometests/bin/Release
-            Invoke-WebRequest -Uri $uri -OutFile SharedWebUi.dll
+            Invoke-WebRequest -Uri $uri -OutFile Chrometests/bin/Release/SharedWebUi.dll
           } else {
             echo "Downloading Chrometests for Appveyor build"
             $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.7z?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
