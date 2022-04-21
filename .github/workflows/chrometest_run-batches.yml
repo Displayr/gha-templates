@@ -147,6 +147,7 @@ jobs:
           }
           if (-not (Test-Path -Path $env:TEST_LOCATION) -or ($LastExitCode -ne 0)) { throw "Extraction Error" }
       - name: Rerun Download
+        timeout-minutes: 5
         if: steps.download.outcome == 'failure'
         run: |
           if ("${{ inputs.source }}" -eq "CircleCI") {
