@@ -27,7 +27,7 @@ on:
         required: true
         type: string
       source:
-        description: Source of the calling workflow. This is either 'Appveyor' or 'Github Actions'
+        description: Source of the calling workflow. This is either 'Appveyor' or 'CircleCI'
         required: true
         type: string
     secrets:
@@ -66,6 +66,16 @@ jobs:
           .\font-awesome-${{ env.FONT_AWESOME_VERSION }}\fonts\fontawesome-webfont.ttf
           C:\Users\runneradmin\Documents\PowerShell\Modules\SimplySql\${{ env.SIMPLY_SQL_VERSION }}
         key: opensans-${{ env.OPENSANS_VERSION }}-fontawesome-${{ env.FONT_AWESOME_VERSION }}-simplysql-${{ env.SIMPLY_SQL_VERSION }}
+    - name: Update Cache
+      if: steps.cache.outputs.cache-hit == 'false'
+      run: |
+        choco install -y opensans --version ${{ env.OPENSANS_VERSION }}
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        $FontAwesomeUri = "https://github.com/FortAwesome/Font-Awesome/archive/v${{ env.FONT_AWESOME_VERSION }}.zip"
+        $FontAwesome = "font-awesome-${{ env.FONT_AWESOME_VERSION }}.zip"
+        Invoke-WebRequest $FontAwesomeUri -OutFile $FontAwesome 
+        [System.IO.Compression.ZipFile]::ExtractToDirectory($FontAwesome, "./")
+        Install-Module -Name SimplySql -RequiredVersion ${{ env.SIMPLY_SQL_VERSION }} -Confirm:$False -Force
 
   run_batch:
     name: Run Batch
@@ -100,7 +110,7 @@ jobs:
             .\font-awesome-${{ env.FONT_AWESOME_VERSION }}\fonts\fontawesome-webfont.ttf
             C:\Users\runneradmin\Documents\PowerShell\Modules\SimplySql\${{ env.SIMPLY_SQL_VERSION }}
           key: opensans-${{ env.OPENSANS_VERSION }}-fontawesome-${{ env.FONT_AWESOME_VERSION }}-simplysql-${{ env.SIMPLY_SQL_VERSION }}
-      - name: Install Dependencies
+      - name: Install Dependencies If Cache Fails
         if: steps.cache.outputs.cache-hit == 'false'
         run: |
           choco install -y opensans --version ${{ env.OPENSANS_VERSION }}
@@ -117,18 +127,43 @@ jobs:
           $FontPath = Join-Path $pwd font-awesome-${{ env.FONT_AWESOME_VERSION }}\fonts\fontawesome-webfont.ttf
           Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts" -Name "FontAwesome" -Value "$FontPath"
       - name: Download and Extract Release
-        id: getChromeInABoxArtifact
+        id: download
+        timeout-minutes: 5
         continue-on-error: true
         run: |
-          $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.7z?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
-          Invoke-WebRequest -Uri $uri -OutFile ChromeTests.7z
-          7z x -y .\ChromeTests.7z
-      - name: Retry Download and Extract Release
-        if: steps.getChromeInABoxArtifact.outcome == 'failure'
+          if ("${{ inputs.source }}" -eq "CircleCI") {
+            echo "Downloading chrometests for CircleCI build"
+            $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.tgz?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
+            Invoke-WebRequest -Uri $uri -OutFile ChromeTests.tgz
+            tar -zxf ChromeTests.tgz
+            $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/SharedWebUi.dll?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
+            Invoke-WebRequest -Uri $uri -OutFile Chrometests/bin/Release/SharedWebUi.dll
+            ls Chrometests/bin/Release
+          } else {
+            echo "Downloading Chrometests for Appveyor build"
+            $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.7z?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
+            Invoke-WebRequest -Uri $uri -OutFile ChromeTests.7z
+            7z x -y .\ChromeTests.7z
+          }
+          if (-not (Test-Path -Path $env:TEST_LOCATION) -or ($LastExitCode -ne 0)) { throw "Extraction Error" }
+      - name: Rerun Download
+        timeout-minutes: 5
+        if: steps.download.outcome == 'failure'
         run: |
-          $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.7z?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
-          Invoke-WebRequest -Uri $uri -OutFile ChromeTests.7z
-          7z x -y .\ChromeTests.7z
+          if ("${{ inputs.source }}" -eq "CircleCI") {
+            echo "Downloading chrometests for CircleCI build"
+            $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.tgz?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
+            Invoke-WebRequest -Uri $uri -OutFile ChromeTests.tgz
+            tar -zxf ChromeTests.tgz
+            $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/SharedWebUi.dll?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
+            Invoke-WebRequest -Uri $uri -OutFile Chrometests/bin/Release/SharedWebUi.dll
+          } else {
+            echo "Downloading Chrometests for Appveyor build"
+            $uri = "${{ env.ENDPOINT_CHROMETEST }}/${{ env.BUILD_NUMBER }}/ChromeTests.7z?${{ secrets.ACCESS_TOKEN_CONTAINER_BUILDS }}"
+            Invoke-WebRequest -Uri $uri -OutFile ChromeTests.7z
+            7z x -y .\ChromeTests.7z
+          }
+          if (-not (Test-Path -Path $env:TEST_LOCATION) -or ($LastExitCode -ne 0)) { throw "Extraction Error" }
       - name: Run Tests
         id: runTests
         timeout-minutes: 30
@@ -144,7 +179,10 @@ jobs:
         timeout-minutes: 30
         run: |
           cd ${{ env.TEST_LOCATION }}
-          Remove-Item '${{ env.TEST_LOCATION }}/Artifacts' -Recurse
+          if (Test-Path -Path 'Artifacts') {
+            echo "removing artifacts folder from last run"
+            Remove-Item 'Artifacts' -Recurse
+          }
           $OriginalFailTestResult = "OriginalFailTestResult.txt"
           Select-Xml -XPath '//test-case' `
             -Path '${{ env.ORIGINAL_RESULT_FILE }}' `
